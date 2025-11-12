@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+    --color-nebula-dark: #0f172a;
+    --color-nebula-light: #1e293b;
+}
