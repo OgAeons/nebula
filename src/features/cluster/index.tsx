@@ -7,7 +7,7 @@ const Cluster = () => {
     const { clusterView } = useViewStore();
     return (
         <div className="w-full h-full relative">
-            <div className="absolute">
+            <div className="absolute top-4 right-4 z-10">
                 <ToggleView />
             </div>
 
