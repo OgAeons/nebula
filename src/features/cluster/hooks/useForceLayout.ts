@@ -1,6 +1,6 @@
 import type { Simulation } from "d3-force"
-import { forceSimulation, forceLink, forceManyBody, forceCenter } from "d3-force"
-import { useEffect, useRef, useState } from "react"
+import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from "d3-force"
+import { useEffect, useRef } from "react"
 
 export interface NodeData {
     id: string;
@@ -9,6 +9,8 @@ export interface NodeData {
     y: number;
     vx: number;
     vy: number;
+    fx: number | null
+    fy: number | null
 }
 
 export interface LinkData {
@@ -17,7 +19,6 @@ export interface LinkData {
 }
 
 export function useForceLayout(nodes: NodeData[], links: LinkData[], width: number, height: number) {
-    const [, setTick] = useState(0)
     const simRef = useRef<Simulation<NodeData, LinkData> | null>(null)
 
     useEffect(() => {
@@ -31,11 +32,9 @@ export function useForceLayout(nodes: NodeData[], links: LinkData[], width: numb
                     .distance(90)       
                     .strength(0.7)
             )
-            .force("charge", forceManyBody().strength(-50))
+            .force("charge", forceManyBody().strength(-70))
             .force("center", forceCenter(width / 2, height / 2))
-            .on("tick", () => {
-                setTick((t) => t + 1)
-            })
+            .force("collide", forceCollide().radius(15))
 
         simRef.current = sim
 
@@ -44,5 +43,5 @@ export function useForceLayout(nodes: NodeData[], links: LinkData[], width: numb
         }
     }, [nodes, links, width, height])
 
-    return { nodes, links }
+    return { nodes, links, simRef }
 }
