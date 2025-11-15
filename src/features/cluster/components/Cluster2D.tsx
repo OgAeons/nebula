@@ -1,10 +1,16 @@
 import { useRef, useEffect, useMemo } from "react" 
 import sample from "../../../data/sample.json"
-import { useForceLayout, type NodeData, type LinkData } from "../hooks/useForceLayout"
-import { generateLinks } from "../utils/generateLinks"
+import { useForceLayout, type NodeData } from "../hooks/useForceLayout"
+import { generateLinks, type ExtendedLinkData } from "../utils/generateLinks"
 import { zoom } from "d3-zoom"
 import { select } from "d3-selection"
 import { useResizeObserver } from "../hooks/useResizeObserver"
+
+const COLORS = {
+    firstLetter: "#18ed6d",
+    lastLetter: "#2b65d9",
+    nodeFill: "#18ede6"
+}
 
 const Cluster2D = () => {
     const canvasRef = useRef<HTMLDivElement>(null)
@@ -12,15 +18,15 @@ const Cluster2D = () => {
 
     const { width, height } = useResizeObserver(canvasRef)
 
-    // 1. Memoize nodes so they are NOT re-created on every render
+    // Memoize nodes so they are NOT re-created on every render
     const nodes: NodeData[] = useMemo(() => {
-        // D3 mutates, so we must clone the data to avoid issues
-        // (This also makes sure node objects have x, y, etc.)
         return (sample as any[]).map(n => ({ ...n, x: 0, y: 0, vx: 0, vy: 0 }))
-    }, []) // Empty array means this runs only once
+    }, []) 
 
-    // 2. Memoize links, and only re-calculate if nodes array changes
-    const links: LinkData[] = useMemo(() => generateLinks(nodes), [nodes])
+    // Memoize links, and only re-calculate if nodes array changes
+    const links = useMemo(() => {
+        return generateLinks(nodes)
+    }, [nodes])
 
     const { nodes: simNodes, links: simLinks } = useForceLayout(nodes, links, width, height)
 
@@ -47,7 +53,7 @@ const Cluster2D = () => {
                             y1={(link.source as any).y}
                             x2={(link.target as any).x}
                             y2={(link.target as any).y}
-                            stroke="#999" 
+                            stroke={(link as ExtendedLinkData).type === 'firstLetter' ? COLORS.firstLetter : COLORS.lastLetter} 
                             strokeWidth={1}
                             opacity={0.6}
                         />
@@ -55,12 +61,12 @@ const Cluster2D = () => {
 
                     {simNodes.map((node) => (
                         <g key={node.id} transform={`translate(${node.x}, ${node.y})`}>
-                            <circle r={10} fill="#eee" stroke="#999" strokeWidth={1} />
+                            <circle r={10} fill={COLORS.nodeFill} stroke="#999" strokeWidth={1} />
                             <text 
                                 x={16} 
                                 y={4} 
                                 fontSize="12" 
-                                fill="#fff" 
+                                fill="#eee"
                                 className="select-none"
                             >
                                 {node.label}

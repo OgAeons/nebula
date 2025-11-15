@@ -1,7 +1,11 @@
-import type { NodeData, LinkData } from "../hooks/useForceLayout";
+import type { NodeData, LinkData } from "../hooks/useForceLayout"
 
-export function generateLinks(nodes: NodeData[]) {
-    const links: LinkData[] = [];
+export interface ExtendedLinkData extends LinkData {
+    type: "firstLetter" | "lastLetter"
+}
+
+export function generateLinks(nodes: NodeData[]): ExtendedLinkData[] {
+    const links: ExtendedLinkData[] = [];
   
     // First letter grouping
     for (let i = 0; i < nodes.length; i++) {
@@ -10,7 +14,11 @@ export function generateLinks(nodes: NodeData[]) {
             const firstB = nodes[j].label[0].toLowerCase();
     
             if (firstA === firstB) {
-                links.push({ source: nodes[i].id, target: nodes[j].id });
+                links.push({ 
+                    source: nodes[i].id, 
+                    target: nodes[j].id,
+                    type: 'firstLetter'
+                });
             }
         }
     }
@@ -23,7 +31,11 @@ export function generateLinks(nodes: NodeData[]) {
             const bLast = nodes[j].label.slice(-1).toLowerCase();
     
             if (aLast === bLast) {
-                links.push({ source: nodes[i].id, target: nodes[j].id });
+                links.push({ 
+                    source: nodes[i].id, 
+                    target: nodes[j].id,
+                    type: 'lastLetter'
+                });
             }
         }
     }
