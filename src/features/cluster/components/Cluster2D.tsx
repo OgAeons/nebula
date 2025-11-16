@@ -2,10 +2,10 @@ import { useRef, useEffect, useMemo } from "react"
 import { useResizeObserver } from "../hooks/useResizeObserver" 
 import { useForceLayout, type NodeData } from "../hooks/useForceLayout"
 import { generateLinks, type ExtendedLinkData } from "../utils/generateLinks"
+import { useAppStore } from "../../../store/useAppStore"
 import { zoom } from "d3-zoom"
 import { select } from "d3-selection"
 import { drag } from "d3-drag"
-import sample from "../../../data/sample.json"
 
 const COLORS = {
     firstLetter: "#18ed6d",
@@ -20,10 +20,15 @@ const Cluster2D = () => {
 
     const { width, height } = useResizeObserver(canvasRef)
 
+    // get state
+    const rawNodes = useAppStore((state) => state.nodes)
+    const selectNode = useAppStore((state) => state.selectNode)
+    const clearSelection = useAppStore((state) => state.clearSelection)
+
     // Memoize data 
     const nodes: NodeData[] = useMemo(() => {
-        return (sample as any[]).map(n => ({ ...n, x: 0, y: 0, vx: 0, vy: 0, fx: null, fy: null }))
-    }, []) 
+        return (rawNodes as any[]).map(n => ({ ...n, x: 0, y: 0, vx: 0, vy: 0, fx: null, fy: null }))
+    }, [rawNodes]) 
     const links = useMemo(() => {
         return generateLinks(nodes)
     }, [nodes])
@@ -32,21 +37,26 @@ const Cluster2D = () => {
     const { simRef } = useForceLayout(nodes, links, width, height)
 
     useEffect(() => {
-        if (!svgRef.current || !gRef.current || !simRef.current || !width || !height) return;
+        if (!svgRef.current || !gRef.current || !simRef.current || !width || !height) return
     
-        const svg = select(svgRef.current);
-        const g = select(gRef.current);
-        const sim = simRef.current;
+        const svg = select(svgRef.current)
+        const g = select(gRef.current)
+        const sim = simRef.current
     
         // remove old g children to prevent duplicates
-        g.selectAll("*").remove();
+        g.selectAll("*").remove()
+
+        //clear node selection
+        svg.on("click", () => {
+            clearSelection()
+        })
     
         // ZOOM
         svg.call(
             zoom<SVGSVGElement, unknown>().on("zoom", (e) => { 
-                g.attr("transform", e.transform);
+                g.attr("transform", e.transform)
             })
-        );
+        )
     
         // DRAG HANDLER 
         const dragHandler = drag<SVGGElement, NodeData>()
@@ -100,6 +110,12 @@ const Cluster2D = () => {
 
                     // Apply drag handler
                     group.call(dragHandler);
+
+                    // select node
+                    group.on("click",  (event, d) => {
+                        event.stopPropagation();
+                        selectNode(d.id)
+                    })
                     
                     return group;
                 }
@@ -119,7 +135,7 @@ const Cluster2D = () => {
         return () => {
             sim.on("tick", null);
         }
-    }, [nodes, links, width, height, simRef]);   
+    }, [nodes, links, width, height, simRef, selectNode, clearSelection]);   
 
     return (
         <div ref={canvasRef} className="w-full h-full overflow-hidden select-none">
