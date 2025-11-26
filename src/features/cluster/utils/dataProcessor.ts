@@ -79,7 +79,7 @@ export function dataProcessor(rawNodes: RawNode[], features: string[], k: number
     // Normalzation
     let normalizedNodes = rawNodes.map(n => ({...n}))     // deep copy
 
-    for(const feature in features) {
+    for(const feature of features) {
         const featureValues = rawNodes.map(n => n[feature] as number)
 
         const normalizedValues = minMaxNormalization(featureValues)
