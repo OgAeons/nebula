@@ -1,17 +1,15 @@
 import { useRef, useEffect, useMemo } from "react"
 import { useResizeObserver } from "../hooks/useResizeObserver" 
 import { useForceLayout, type NodeData } from "../hooks/useForceLayout"
-import { generateLinks, type ExtendedLinkData } from "../utils/generateLinks"
+import { dataProcessor } from "../utils/dataProcessor"
 import { useAppStore } from "../../../store/useAppStore"
 import { zoom } from "d3-zoom"
 import { select } from "d3-selection"
 import { drag } from "d3-drag"
+import { scaleOrdinal } from "d3-scale"
+import { schemeCategory10 } from "d3"
 
-const COLORS = {
-    firstLetter: "#18ed6d",
-    lastLetter: "#2b65d9",
-    nodeFill: "#76c2c1"
-}
+const K_NEIGHBOURS = 5
 
 const Cluster2D = () => {
     const canvasRef = useRef<HTMLDivElement>(null)
@@ -21,17 +19,39 @@ const Cluster2D = () => {
     const { width, height } = useResizeObserver(canvasRef)
 
     // get state
-    const rawNodes = useAppStore((state) => state.nodes)
+    const rawNodes = useAppStore((state) => state.rawNodes)
+    const selectedLabel = useAppStore((state) => state.selectedLabel)
+    const selectedFeatures = useAppStore((state) => state.selectedFeatures)
     const selectNode = useAppStore((state) => state.selectNode)
     const clearSelection = useAppStore((state) => state.clearSelection)
 
-    // Memoize data 
-    const nodes: NodeData[] = useMemo(() => {
-        return (rawNodes as any[]).map(n => ({ ...n, x: 0, y: 0, vx: 0, vy: 0, fx: null, fy: null }))
-    }, [rawNodes]) 
-    const links = useMemo(() => {
-        return generateLinks(nodes)
-    }, [nodes])
+    // memoize data 
+    const {nodes, links} = useMemo(() => {
+        if(selectedFeatures.length === 0 || rawNodes.length === 0) {
+            return {nodes: [], links: []}
+        }
+
+        // normalization and k-NN link generation
+        const {processedNodes, links} = dataProcessor(rawNodes, selectedFeatures, K_NEIGHBOURS)
+
+        // d3 node properties
+        const d3Nodes: NodeData[] = processedNodes.map(n => ({ 
+            ...n, 
+            x: 0, y: 0, vx: 0, vy: 0, fx: null, fy: null 
+        }))
+
+        return {nodes: d3Nodes, links: links}
+    }, [rawNodes, selectedFeatures])
+
+    // dynamic color
+    const uniqueLabels = useMemo(() => {
+        if (!selectedLabel) return [];
+        return [...new Set(rawNodes.map(n => n[selectedLabel]))];
+    }, [rawNodes, selectedLabel]);
+
+    const colorScale = useMemo(() => {
+        return scaleOrdinal(schemeCategory10).domain(uniqueLabels);
+    }, [uniqueLabels]);
 
     // Get simulation from the hook
     const { simRef } = useForceLayout(nodes, links, width, height)
@@ -81,9 +101,9 @@ const Cluster2D = () => {
             .selectAll("line")
             .data(links, (d: any) => `${d.source.id}-${d.target.id}`)
             .join("line")
-            .attr("stroke", d => (d as ExtendedLinkData).type === "firstLetter" ? COLORS.firstLetter : COLORS.lastLetter)
-            .attr("stroke-width", 1)
-            .attr("opacity", 1)
+            .attr("stroke", "#ffffff")
+            .attr("stroke-width", 0.5)
+            .attr("opacity", 0.6)
         
         const nodeSelection = g.append("g")
             .attr("class", "nodes")
@@ -97,13 +117,13 @@ const Cluster2D = () => {
                     // Add circle
                     group.append("circle")
                         .attr("r", 10)
-                        .attr("fill", COLORS.nodeFill)
+                        .attr("fill", (d: any) => colorScale(d[selectedLabel!]) as string)
                         .attr("stroke", "#fff")
                         .attr("stroke-width", 1)
 
                     // Add text
                     group.append("text")
-                        .text(d => d.label)
+                        .text((d: any) => d[selectedLabel!])
                         .attr("x", 16)
                         .attr("y", 4)
                         .attr("fill", "#eee")
@@ -135,10 +155,26 @@ const Cluster2D = () => {
         return () => {
             sim.on("tick", null);
         }
-    }, [nodes, links, width, height, simRef, selectNode, clearSelection]);   
+    }, [nodes, links, width, height, simRef, selectNode, clearSelection, colorScale, selectedLabel]);   
+
+    // UI state for empty data
+    if (rawNodes.length === 0) {
+        return (
+            <div className="flex items-center justify-center w-full h-full text-gray-500">
+                <p>Please upload a CSV file to begin.</p>
+            </div>
+        )
+    }
 
     return (
-        <div ref={canvasRef} className="w-full h-full overflow-hidden select-none">
+        <div ref={canvasRef} className="w-full h-full overflow-hidden select-none relative">
+            {rawNodes.length > 0 && selectedFeatures.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center z-10 text-white bg-black/30 pointer-events-none">
+                    <p className="text-xl p-4 bg-gray-800/80 rounded-lg">
+                        Please select features to build the graph.
+                    </p>
+                </div>
+            )}
             <svg ref={svgRef} className="w-full h-full">
                 <g ref={gRef} />
             </svg>
