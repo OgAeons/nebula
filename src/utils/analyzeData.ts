@@ -9,6 +9,10 @@ export interface AnalyzedData {
 }
 
 function analyzeColumns(data: any[], fields: string[]) {
+    if (data.length === 0) {
+        return { numeric: [], categorical: [] }
+    }
+    
     const numeric: string[] = []
     const categorical: string[] = []
     const firstRow = data[0]

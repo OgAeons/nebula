@@ -21,7 +21,6 @@ export const FileUpload = () => {
             console.error("CSV processing error: " + err)
         } finally {
             setIsLoading(false)
-            event.target.value = ''
         }
     }
 
@@ -36,6 +35,7 @@ export const FileUpload = () => {
                 accept=".csv"
                 onChange={handleFileChange} 
                 disabled={isLoading}
+                autoComplete="off"
                 className="block w-full text-sm text-gray-400
                 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm 
                 file:font-semibold file:bg-blue-600 file:text-white
