@@ -29,12 +29,12 @@ export function useForceLayout(nodes: NodeData[], links: LinkData[], width: numb
                 "link",
                 forceLink<NodeData, LinkData>(links)
                     .id((d) => d.id)
-                    .distance(90)       
+                    .distance(200)       
                     .strength(0.7)
             )
-            .force("charge", forceManyBody().strength(-70))
+            .force("charge", forceManyBody().strength(-30))
             .force("center", forceCenter(width / 2, height / 2))
-            .force("collide", forceCollide().radius(15))
+            .force("collide", forceCollide().radius(40))
 
         simRef.current = sim
 
