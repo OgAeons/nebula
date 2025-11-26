@@ -1,35 +1,68 @@
 import { create } from 'zustand'
-import sample from "../data/sample.json"
+import type { AnalyzedData } from '../utils/analyzeData'
 
-export interface BasicNode {
-    id: string
-    label: string
-}
+// types
+export interface AppStore {
+    // Data state
+    rawNodes: any[]
+    allColumns: string[]
+    numericColumns: string[]
+    categoricalColumns: string[]
 
-interface AppStore {
+    // Node Selection state
+    isLoading: boolean
+    selectedNodeId: string | null
+
+    // User Column selection state
+    selectedLabel: string | null
+    selectedFeatures: string[]
+
     // app theme
     theme: 'dark' | 'light'
-    toggleTheme: () => void
-    
-    // select and clear node
-    selectedNodeId: string | null
+
+    //Actions
     selectNode: (id: string) => void
     clearSelection: () => void
-
-    // data
-    nodes: BasicNode[]
+    setAnalyzedData: (data: AnalyzedData) => void
+    setSelectedLabel: (column: string) => void
+    setSelectedFeatures: (columns: string[]) => void
+    toggleTheme: () => void
 }
 
 export const useAppStore = create<AppStore>((set) => ({
+    // Data state
+    rawNodes: [],
+    allColumns: [],
+    numericColumns: [],
+    categoricalColumns: [],
+
+    // Node Selection state
+    isLoading: false,
+    selectedNodeId: null,
+
+    // User Column selection state
+    selectedLabel: null,
+    selectedFeatures: [],
+
     // app theme state
     theme: 'dark',
+
+    // Actions
+    selectNode: (id) => set({ selectedNodeId: id }),
+    clearSelection: () => set({ selectedNodeId: null }),
+    setSelectedLabel: (column) => set({ selectedLabel: column }),
+    setSelectedFeatures: (columns) => set({ selectedFeatures: columns }),
     toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
-
-    // select and clear node state
-    selectedNodeId: null,
-    selectNode: (id) => set({ selectedNodeId: id}),
-    clearSelection: () => set({ selectedNodeId: null}),
-
-    // data state
-    nodes: sample as BasicNode[],
+    setAnalyzedData: (data) => {
+        set({
+            rawNodes: data.rawNodes,
+            allColumns: data.allColumns,
+            numericColumns: data.numericColumns,
+            categoricalColumns: data.categoricalColumns,
+            selectedLabel: data.defaultLabel,
+            selectedFeatures: [],
+            isLoading: false,
+            selectedNodeId: null
+        })
+    }
 }))
