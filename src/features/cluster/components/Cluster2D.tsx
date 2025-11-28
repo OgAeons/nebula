@@ -9,8 +9,6 @@ import { drag } from "d3-drag"
 import { scaleOrdinal } from "d3-scale"
 import { schemeCategory10 } from "d3"
 
-const K_NEIGHBOURS = 5
-
 const Cluster2D = () => {
     const canvasRef = useRef<HTMLDivElement>(null)
     const svgRef = useRef<SVGSVGElement>(null)
@@ -24,6 +22,7 @@ const Cluster2D = () => {
     const selectedFeatures = useAppStore((state) => state.selectedFeatures)
     const selectNode = useAppStore((state) => state.selectNode)
     const clearSelection = useAppStore((state) => state.clearSelection)
+    const kNeighbours = useAppStore((state) => state.kNeighbours)
 
     // memoize data 
     const {nodes, links} = useMemo(() => {
@@ -32,7 +31,7 @@ const Cluster2D = () => {
         }
 
         // normalization and k-NN link generation
-        const {processedNodes, links} = dataProcessor(rawNodes, selectedFeatures, K_NEIGHBOURS)
+        const {processedNodes, links} = dataProcessor(rawNodes, selectedFeatures, kNeighbours)
 
         // d3 node properties
         const d3Nodes: NodeData[] = processedNodes.map(n => ({ 
@@ -41,7 +40,7 @@ const Cluster2D = () => {
         }))
 
         return {nodes: d3Nodes, links: links}
-    }, [rawNodes, selectedFeatures])
+    }, [rawNodes, selectedFeatures, kNeighbours])
 
     // dynamic color
     const uniqueLabels = useMemo(() => {

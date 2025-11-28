@@ -17,6 +17,8 @@ export interface AppStore {
     selectedLabel: string | null
     selectedFeatures: string[]
 
+    kNeighbours: number
+
     // app theme
     theme: 'dark' | 'light'
 
@@ -26,6 +28,7 @@ export interface AppStore {
     setAnalyzedData: (data: AnalyzedData) => void
     setSelectedLabel: (column: string) => void
     setSelectedFeatures: (columns: string[]) => void
+    setKNeighbours: (k: number) => void
     toggleTheme: () => void
 }
 
@@ -44,6 +47,8 @@ export const useAppStore = create<AppStore>((set) => ({
     selectedLabel: null,
     selectedFeatures: [],
 
+    kNeighbours: 5,
+
     // app theme state
     theme: 'dark',
 
@@ -52,6 +57,7 @@ export const useAppStore = create<AppStore>((set) => ({
     clearSelection: () => set({ selectedNodeId: null }),
     setSelectedLabel: (column) => set({ selectedLabel: column }),
     setSelectedFeatures: (columns) => set({ selectedFeatures: columns }),
+    setKNeighbours: (k) => set({ kNeighbours: k }),
     toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
     setAnalyzedData: (data) => {
         set({
